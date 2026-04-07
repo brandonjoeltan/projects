@@ -64,12 +64,13 @@
     .dropzone p { margin: 10px 0; color: var(--muted); }
     .controls { display: grid; gap: 12px; }
     label { font-size: 14px; font-weight: 600; }
-    input[type="number"] {
+    input[type="number"], .name-input {
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
       font-size: 16px;
+      background: white;
     }
     .button-row, .file-tags, .action-row, .tabs {
       display: flex;
@@ -107,11 +108,30 @@
       border-radius: 999px;
       padding: 8px 12px;
       font-size: 13px;
+      flex-shrink: 0;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: minmax(280px, auto) minmax(220px, 1fr);
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 10px;
     }
     .muted { color: var(--muted); }
-    .errors { margin-top: 14px; display: grid; gap: 6px; color: var(--danger); font-size: 14px; }
+    .errors {
+      margin-top: 14px;
+      display: grid;
+      gap: 6px;
+      color: var(--danger);
+      font-size: 14px;
+    }
     .tabs { margin-bottom: 12px; }
-    .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
     .table-wrap {
       background: white;
       border: 1px solid var(--border);
@@ -136,14 +156,25 @@
       border-bottom: 1px solid #e2e8f0;
       white-space: nowrap;
     }
-    .footnote { padding: 10px 12px; font-size: 12px; color: var(--muted); border-top: 1px solid #e2e8f0; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .footnote {
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid #e2e8f0;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .file-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>UV Spectral Data Dropzone</h1>
-    <p class="lead">Drop one or more spectrometer <code>.txt</code> files, set the distance in cm, and the app will apply <code>value × 4 × π × distance² / 1,000,000</code>, combine all tests into one table, and split the results into 200–280, 281–320, and 321–400.</p>
+    <p class="lead">
+      Drop one or more spectrometer <code>.txt</code> files, set the distance in cm, rename each output column however you want, and the app will apply
+      <code>value × 4 × π × distance² / 1,000,000</code>, combine all tests into one table, and split the results into 200–280, 281–320, and 321–400.
+    </p>
 
     <div class="grid">
       <section class="card">
@@ -206,6 +237,7 @@
   <script>
     const BEGIN_MARKER = '>>>>>Begin Spectral Data<<<<<';
     const PI = 3.141592654;
+
     const state = {
       parsedFiles: [],
       errors: [],
@@ -229,39 +261,63 @@
     function parseSpectralFile(text, filename) {
       const lines = text.split(/\r?\n/);
       const markerIndex = lines.findIndex(line => line.includes(BEGIN_MARKER));
-      if (markerIndex === -1) throw new Error(`${filename}: spectral data marker not found`);
+      if (markerIndex === -1) {
+        throw new Error(`${filename}: spectral data marker not found`);
+      }
 
       const rows = [];
       for (let i = markerIndex + 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
+
         const parts = line.split(/\s+/);
         if (parts.length < 2) continue;
+
         const wavelength = Number(parts[0]);
         const value = Number(parts[1]);
+
         if (Number.isFinite(wavelength) && Number.isFinite(value)) {
           rows.push({ wavelength, value });
         }
       }
-      if (!rows.length) throw new Error(`${filename}: no spectral rows found`);
-      return { filename, testName: extractTestName(filename), rows };
+
+      if (!rows.length) {
+        throw new Error(`${filename}: no spectral rows found`);
+      }
+
+      const defaultName = extractTestName(filename);
+      return {
+        filename,
+        testName: defaultName,
+        customName: defaultName,
+        rows
+      };
     }
 
     function transformRows(rows, distance) {
       const factor = (4 * PI * distance * distance) / 1000000;
-      return rows.map(r => ({ wavelength: Number(r.wavelength), value: r.value * factor }));
+      return rows.map(r => ({
+        wavelength: Number(r.wavelength),
+        value: r.value * factor
+      }));
     }
 
     function buildCombinedTable(parsedFiles, distance) {
       const byWavelength = new Map();
+
       parsedFiles.forEach(file => {
         const transformed = transformRows(file.rows, distance);
+        const columnName = (file.customName || file.testName || file.filename || 'Unnamed').trim() || 'Unnamed';
+
         transformed.forEach(row => {
           const key = row.wavelength;
-          if (!byWavelength.has(key)) byWavelength.set(key, { wavelength: key });
-          byWavelength.get(key)[file.testName] = row.value;
+          if (!byWavelength.has(key)) {
+            byWavelength.set(key, { wavelength: key });
+          }
+          byWavelength.get(key)[columnName] = row.value;
         });
       });
+
       return Array.from(byWavelength.values()).sort((a, b) => a.wavelength - b.wavelength);
     }
 
@@ -271,14 +327,17 @@
 
     function buildBandSummary(rows) {
       if (!rows.length) return [];
+
       const allColumns = new Set();
       rows.forEach(row => Object.keys(row).forEach(k => allColumns.add(k)));
       const testColumns = Array.from(allColumns).filter(k => k !== 'wavelength');
+
       const bands = [
         { label: '200-280', min: 200, max: 280 },
         { label: '281-320', min: 281, max: 320 },
         { label: '321-400', min: 321, max: 400 }
       ];
+
       return bands.map(band => {
         const subset = filterBand(rows, band.min, band.max);
         const out = { Band: band.label };
@@ -291,13 +350,18 @@
 
     function toCsv(rows) {
       if (!rows.length) return '';
+
       const headers = Object.keys(rows[0]);
       const escapeCell = value => {
         if (value === undefined || value === null) return '';
         const s = String(value);
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
       };
-      return [headers.join(','), ...rows.map(row => headers.map(h => escapeCell(row[h])).join(','))].join('\n');
+
+      return [
+        headers.join(','),
+        ...rows.map(row => headers.map(h => escapeCell(row[h])).join(','))
+      ].join('\n');
     }
 
     function downloadBlob(filename, content, mimeType) {
@@ -338,6 +402,7 @@
     function renderTabs() {
       const container = document.getElementById('tabs');
       container.innerHTML = '';
+
       tabs.forEach(tab => {
         const btn = document.createElement('button');
         btn.className = 'tab' + (state.activeTab === tab.key ? ' active' : '');
@@ -353,6 +418,7 @@
     function renderTable(rows) {
       const table = document.getElementById('dataTable');
       const footnote = document.getElementById('tableFootnote');
+
       if (!rows.length) {
         table.innerHTML = '';
         footnote.textContent = 'No rows to display.';
@@ -372,21 +438,43 @@
       }).join('')}</tr>`).join('')}</tbody>`;
 
       table.innerHTML = thead + tbody;
-      footnote.textContent = rows.length > limited.length ? `Showing first ${limited.length} of ${rows.length} rows.` : `${rows.length} row(s).`;
+      footnote.textContent = rows.length > limited.length
+        ? `Showing first ${limited.length} of ${rows.length} rows.`
+        : `${rows.length} row(s).`;
     }
 
     function renderFiles() {
       const tags = document.getElementById('fileTags');
       tags.innerHTML = '';
+
       if (!state.parsedFiles.length) {
         tags.innerHTML = '<div class="muted">No files loaded yet.</div>';
         return;
       }
-      state.parsedFiles.forEach(file => {
-        const span = document.createElement('span');
-        span.className = 'tag';
-        span.textContent = file.filename;
-        tags.appendChild(span);
+
+      state.parsedFiles.forEach((file, index) => {
+        const row = document.createElement('div');
+        row.className = 'file-row';
+
+        const label = document.createElement('span');
+        label.className = 'tag';
+        label.textContent = file.filename;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'name-input';
+        input.value = file.customName || '';
+        input.placeholder = 'Enter output column name';
+
+        input.addEventListener('input', (e) => {
+          state.parsedFiles[index].customName = e.target.value;
+          renderStats();
+          renderTable(currentRows());
+        });
+
+        row.appendChild(label);
+        row.appendChild(input);
+        tags.appendChild(row);
       });
     }
 
@@ -433,12 +521,14 @@
         if (idx >= 0) state.parsedFiles[idx] = p;
         else state.parsedFiles.push(p);
       });
+
       state.errors = errors;
       render();
     }
 
     document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
     document.getElementById('distance').addEventListener('input', render);
+
     document.querySelectorAll('[data-distance]').forEach(btn => {
       btn.addEventListener('click', () => {
         document.getElementById('distance').value = btn.dataset.distance;
