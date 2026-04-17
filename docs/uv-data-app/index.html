@@ -359,10 +359,20 @@
       { key: 'all', label: 'All Data' },
       { key: 'comparison', label: 'Comparison Δ' },
       { key: 'normalized', label: 'Normalized' },
+  
+      // Existing bands
       { key: '200-280', label: '200–280' },
       { key: '281-320', label: '281–320' },
       { key: '321-400', label: '321–400' },
       { key: '401-600', label: '401–600' },
+
+      // NEW finer bands
+      { key: '200-250', label: '200–250' },
+      { key: '251-300', label: '251–300' },
+      { key: '301-350', label: '301–350' },
+      { key: '351-400', label: '351–400' },
+      { key: '401-450', label: '401–450' },
+    
       { key: 'summary', label: 'Band Summary' },
       { key: 'peaks', label: 'Peak Tracking' },
       { key: 'degradation', label: 'Degradation' }
@@ -555,10 +565,18 @@
       const testColumns = getAllDataColumns(rows);
 
       const bands = [
+        // Existing
         { label: '200-280', min: 200, max: 280 },
         { label: '281-320', min: 281, max: 320 },
         { label: '321-400', min: 321, max: 400 },
-        { label: '401-600', min: 401, max: 600 }
+        { label: '401-600', min: 401, max: 600 },
+      
+        // NEW finer bands
+        { label: '200-250', min: 200, max: 250 },
+        { label: '251-300', min: 251, max: 300 },
+        { label: '301-350', min: 301, max: 350 },
+        { label: '351-400', min: 351, max: 400 },
+        { label: '401-450', min: 401, max: 450 }
       ];
 
       return bands.map(band => {
@@ -667,36 +685,39 @@
       return Number.isFinite(value) ? value : 150;
     }
 
-    function getDerivedData() {
-      const distance = getDistance();
-      const normalizeMode = getNormalizeMode();
-      const baselineName = getBaselineName();
-      const peakTargets = getPeakTargets();
-
-      const combinedRows = buildCombinedTable(state.parsedFiles, distance);
-      const comparisonRows = baselineName ? buildComparisonTable(combinedRows, baselineName) : [];
-      const normalizedRows = buildNormalizedTable(state.parsedFiles, distance, normalizeMode);
-      const band200280 = filterBand(combinedRows, 200, 280);
-      const band281320 = filterBand(combinedRows, 281, 320);
-      const band321400 = filterBand(combinedRows, 321, 400);
-      const band401600 = filterBand(combinedRows, 401, 600);
-      const bandSummary = buildBandSummary(combinedRows);
-      const peakTracking = buildPeakTracking(state.parsedFiles, distance, peakTargets, normalizeMode);
-      const degradationTracking = buildDegradationTable(state.parsedFiles, distance, peakTargets);
-
-      return {
-        combinedRows,
-        comparisonRows,
-        normalizedRows,
-        band200280,
-        band281320,
-        band321400,
-        band401600,
-        bandSummary,
-        peakTracking,
-        degradationTracking
-      };
-    }
+      function getDerivedData() {
+        const distance = getDistance();
+        const normalizeMode = getNormalizeMode();
+        const baselineName = getBaselineName();
+        const peakTargets = getPeakTargets();
+      
+        const combinedRows = buildCombinedTable(state.parsedFiles, distance);
+        const comparisonRows = baselineName ? buildComparisonTable(combinedRows, baselineName) : [];
+        const normalizedRows = buildNormalizedTable(state.parsedFiles, distance, normalizeMode);
+      
+        return {
+          combinedRows,
+          comparisonRows,
+          normalizedRows,
+      
+          // Existing bands
+          band200280: filterBand(combinedRows, 200, 280),
+          band281320: filterBand(combinedRows, 281, 320),
+          band321400: filterBand(combinedRows, 321, 400),
+          band401600: filterBand(combinedRows, 401, 600),
+      
+          // NEW finer bands
+          band200250: filterBand(combinedRows, 200, 250),
+          band251300: filterBand(combinedRows, 251, 300),
+          band301350: filterBand(combinedRows, 301, 350),
+          band351400: filterBand(combinedRows, 351, 400),
+          band401450: filterBand(combinedRows, 401, 450),
+      
+          bandSummary: buildBandSummary(combinedRows),
+          peakTracking: buildPeakTracking(state.parsedFiles, distance, peakTargets, normalizeMode),
+          degradationTracking: buildDegradationTable(state.parsedFiles, distance, peakTargets)
+        };
+      }
 
     function currentRows() {
       const {
@@ -707,22 +728,37 @@
         band281320,
         band321400,
         band401600,
+        band200250,
+        band251300,
+        band301350,
+        band351400,
+        band401450,
         bandSummary,
         peakTracking,
         degradationTracking
       } = getDerivedData();
-
+    
       if (state.activeTab === 'comparison') return comparisonRows;
       if (state.activeTab === 'normalized') return normalizedRows;
+    
       if (state.activeTab === '200-280') return band200280;
       if (state.activeTab === '281-320') return band281320;
       if (state.activeTab === '321-400') return band321400;
       if (state.activeTab === '401-600') return band401600;
+    
+      // NEW bands
+      if (state.activeTab === '200-250') return band200250;
+      if (state.activeTab === '251-300') return band251300;
+      if (state.activeTab === '301-350') return band301350;
+      if (state.activeTab === '351-400') return band351400;
+      if (state.activeTab === '401-450') return band401450;
+    
       if (state.activeTab === 'summary') return bandSummary;
       if (state.activeTab === 'peaks') return peakTracking;
       if (state.activeTab === 'degradation') return degradationTracking;
+    
       return combinedRows;
-    }
+}
 
     function renderTabs() {
       const container = document.getElementById('tabs');
