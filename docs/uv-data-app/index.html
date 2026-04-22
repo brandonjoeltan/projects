@@ -25,25 +25,28 @@
       color: var(--text);
     }
     .container {
-      max-width: 1500px;
+      max-width: 1700px;
       margin: 0 auto;
       padding: 24px;
     }
     h1 { margin: 0 0 8px; font-size: 32px; }
-    h3 { margin: 0 0 10px; font-size: 16px; }
     p.lead { margin: 0 0 24px; color: var(--muted); line-height: 1.5; }
+
     .grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 1.4fr 1fr;
       gap: 20px;
       margin-bottom: 20px;
     }
+
     .grid-2 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.6fr 1fr;
       gap: 20px;
       margin-bottom: 20px;
+      align-items: start;
     }
+
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -57,6 +60,7 @@
       font-size: 20px;
     }
     .card-body { padding: 20px; }
+
     .dropzone {
       border: 2px dashed var(--border);
       border-radius: 18px;
@@ -70,17 +74,20 @@
       background: #f1f5f9;
     }
     .dropzone p { margin: 10px 0; color: var(--muted); }
+
     .controls {
       display: grid;
       gap: 12px;
     }
+
     label {
       font-size: 14px;
       font-weight: 600;
       display: block;
       margin-bottom: 6px;
     }
-    input[type="number"], input[type="text"], select, .name-input {
+
+    input[type="number"], input[type="text"], select {
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
@@ -88,12 +95,15 @@
       font-size: 15px;
       background: white;
       color: var(--text);
+      min-width: 0;
     }
-    .button-row, .file-tags, .action-row, .tabs {
+
+    .button-row, .action-row, .tabs {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
+
     button, .fake-button {
       appearance: none;
       border: 1px solid var(--border);
@@ -121,6 +131,7 @@
       border-color: #bbf7d0;
     }
     button:disabled { opacity: .5; cursor: not-allowed; }
+
     .tag {
       display: inline-flex;
       gap: 8px;
@@ -132,21 +143,35 @@
       font-size: 13px;
       flex-shrink: 0;
     }
+
+    .pairing-wrap {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .pairing-header,
     .file-row {
       display: grid;
-      grid-template-columns: minmax(180px, 240px) minmax(160px, 1fr) 120px 140px 160px 160px;
+      grid-template-columns: 220px 220px 110px 130px 180px 180px;
       gap: 10px;
       align-items: center;
-      width: 100%;
-      margin-bottom: 10px;
+      min-width: 1080px;
     }
-    .file-row.header {
+
+    .pairing-header {
       font-size: 12px;
       color: var(--muted);
       font-weight: 700;
       margin-bottom: 8px;
+      padding: 0 2px;
     }
+
+    .file-row {
+      margin-bottom: 10px;
+    }
+
     .muted { color: var(--muted); }
+
     .errors {
       margin-top: 14px;
       display: grid;
@@ -154,19 +179,23 @@
       color: var(--danger);
       font-size: 14px;
     }
+
     .tabs { margin-bottom: 12px; }
     .tab.active {
       background: var(--accent);
       color: white;
       border-color: var(--accent);
     }
+
     .table-wrap {
       background: white;
       border: 1px solid var(--border);
       border-radius: 18px;
       overflow: hidden;
     }
-    .scroll { max-height: 600px; overflow: auto; }
+
+    .scroll { max-height: 620px; overflow: auto; }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -185,12 +214,14 @@
       white-space: nowrap;
       vertical-align: top;
     }
+
     .footnote {
       padding: 10px 12px;
       font-size: 12px;
       color: var(--muted);
       border-top: 1px solid #e2e8f0;
     }
+
     .stat-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -202,11 +233,13 @@
       padding: 12px;
       background: #fff;
     }
+
     .small {
       font-size: 12px;
       color: var(--muted);
       line-height: 1.5;
     }
+
     .pill {
       display: inline-block;
       padding: 6px 10px;
@@ -214,12 +247,16 @@
       border: 1px solid var(--border);
       background: #fff;
       font-size: 12px;
+      margin-top: 6px;
     }
+
     @media (max-width: 1300px) {
       .grid, .grid-2 { grid-template-columns: 1fr; }
-      .file-row { grid-template-columns: 1fr; }
-      .file-row.header { display: none; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .stat-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -228,9 +265,9 @@
     <h1>UV Spectral Data Dropzone</h1>
     <p class="lead">
       Drop one or more spectrometer <code>.txt</code> files, set the distance in cm, rename each output column, assign each file as either a
-      <strong>Control</strong> or <strong>Test</strong>, and for each test select the control measured <strong>before</strong> and <strong>after</strong>.
-      The app will average the two selected controls and normalize the test measurement against that average.
-      It also tracks degradation across hours and keeps both your current bands and finer UV bands.
+      <strong>Control</strong> or <strong>Test</strong>, and for each test select the control measured <strong>before</strong> and/or <strong>after</strong>.
+      If both are selected, the app averages them wavelength-by-wavelength. If only one is selected, the app uses that single control directly.
+      The test is then normalized against that control reference.
     </p>
 
     <div class="grid">
@@ -297,15 +334,17 @@
       <section class="card">
         <h2>Loaded files and control pairing</h2>
         <div class="card-body">
-          <div class="file-row header">
-            <div>Filename</div>
-            <div>Output column name</div>
-            <div>Hours</div>
-            <div>Type</div>
-            <div>Control before</div>
-            <div>Control after</div>
+          <div class="pairing-wrap">
+            <div class="pairing-header">
+              <div>Filename</div>
+              <div>Output column name</div>
+              <div>Hours</div>
+              <div>Type</div>
+              <div>Control before</div>
+              <div>Control after (optional)</div>
+            </div>
+            <div id="fileTags"></div>
           </div>
-          <div id="fileTags" class="file-tags" style="display:block;"></div>
           <div style="margin-top: 14px;">
             <button id="clearFiles" class="danger" disabled>Clear files</button>
           </div>
@@ -316,12 +355,18 @@
         <h2>How normalization works</h2>
         <div class="card-body">
           <div class="small">
-            <div><strong>Step 1:</strong> For each test file, choose the control measured before and the control measured after.</div>
-            <div><strong>Step 2:</strong> The app averages those two controls wavelength-by-wavelength.</div>
-            <div><strong>Step 3:</strong> The normalized output is calculated as:</div>
-            <div style="margin:8px 0;"><span class="pill">normalized test = test / average(control before, control after)</span></div>
-            <div><strong>Step 4:</strong> Degradation tracking across hours uses the normalized band totals for each named test series.</div>
-            <div style="margin-top:8px;">Leave a control dropdown blank if a file is itself a control or if you do not want that test normalized yet.</div>
+            <div><strong>Option A:</strong> select both control before and control after.</div>
+            <div class="pill">normalized test = test / average(control before, control after)</div>
+
+            <div style="margin-top:10px;"><strong>Option B:</strong> select only one control.</div>
+            <div class="pill">normalized test = test / selected control</div>
+
+            <div style="margin-top:10px;"><strong>Option C:</strong> leave both blank.</div>
+            <div class="pill">the test will stay unnormalized and will not appear in normalized outputs</div>
+
+            <div style="margin-top:10px;">
+              Degradation tracking uses the <strong>normalized band totals</strong> and compares each test to the earliest-hour normalized test.
+            </div>
           </div>
         </div>
       </section>
@@ -350,13 +395,11 @@
       { key: 'all', label: 'All Data' },
       { key: 'normalized', label: 'Normalized Tests' },
 
-      // Existing bands
       { key: '200-280', label: '200–280' },
       { key: '281-320', label: '281–320' },
       { key: '321-400', label: '321–400' },
       { key: '401-600', label: '401–600' },
 
-      // Added finer bands
       { key: '200-250', label: '200–250' },
       { key: '251-300', label: '251–300' },
       { key: '301-350', label: '301–350' },
@@ -438,12 +481,10 @@
       return map;
     }
 
-    function buildSingleTableFromFiles(parsedFiles, distance, allowedTypes = null) {
+    function buildSingleTableFromFiles(parsedFiles, distance) {
       const byWavelength = new Map();
 
       parsedFiles.forEach(file => {
-        if (allowedTypes && !allowedTypes.includes(file.type)) return;
-
         const transformed = transformRows(file.rows, distance);
         const columnName = getDisplayName(file);
 
@@ -459,11 +500,11 @@
       return Array.from(byWavelength.values()).sort((a, b) => a.wavelength - b.wavelength);
     }
 
-    function buildAverageControlRows(controlBeforeFile, controlAfterFile, distance) {
-      if (!controlBeforeFile || !controlAfterFile) return [];
+    function buildControlReferenceRows(controlBeforeFile, controlAfterFile, distance) {
+      if (!controlBeforeFile && !controlAfterFile) return [];
 
-      const beforeRows = transformRows(controlBeforeFile.rows, distance);
-      const afterRows = transformRows(controlAfterFile.rows, distance);
+      const beforeRows = controlBeforeFile ? transformRows(controlBeforeFile.rows, distance) : [];
+      const afterRows = controlAfterFile ? transformRows(controlAfterFile.rows, distance) : [];
 
       const beforeMap = new Map(beforeRows.map(r => [r.wavelength, r.value]));
       const afterMap = new Map(afterRows.map(r => [r.wavelength, r.value]));
@@ -472,11 +513,16 @@
       return wavelengths.map(w => {
         const beforeVal = beforeMap.get(w);
         const afterVal = afterMap.get(w);
+
         if (Number.isFinite(beforeVal) && Number.isFinite(afterVal)) {
           return { wavelength: w, value: (beforeVal + afterVal) / 2 };
         }
-        if (Number.isFinite(beforeVal)) return { wavelength: w, value: beforeVal };
-        if (Number.isFinite(afterVal)) return { wavelength: w, value: afterVal };
+        if (Number.isFinite(beforeVal)) {
+          return { wavelength: w, value: beforeVal };
+        }
+        if (Number.isFinite(afterVal)) {
+          return { wavelength: w, value: afterVal };
+        }
         return { wavelength: w, value: null };
       });
     }
@@ -487,15 +533,15 @@
 
       parsedFiles.forEach(file => {
         if (file.type !== 'test') return;
-        if (!file.controlBeforeId || !file.controlAfterId) return;
+        if (!file.controlBeforeId && !file.controlAfterId) return;
 
-        const controlBefore = idMap.get(file.controlBeforeId);
-        const controlAfter = idMap.get(file.controlAfterId);
-        if (!controlBefore || !controlAfter) return;
+        const controlBefore = file.controlBeforeId ? idMap.get(file.controlBeforeId) : null;
+        const controlAfter = file.controlAfterId ? idMap.get(file.controlAfterId) : null;
+        if (!controlBefore && !controlAfter) return;
 
         const testRows = transformRows(file.rows, distance);
-        const avgControlRows = buildAverageControlRows(controlBefore, controlAfter, distance);
-        const controlMap = new Map(avgControlRows.map(r => [r.wavelength, r.value]));
+        const referenceRows = buildControlReferenceRows(controlBefore, controlAfter, distance);
+        const controlMap = new Map(referenceRows.map(r => [r.wavelength, r.value]));
         const columnName = getDisplayName(file);
 
         testRows.forEach(row => {
@@ -532,13 +578,11 @@
       const testColumns = getAllDataColumns(rows);
 
       const bands = [
-        // Existing
         { label: '200-280', min: 200, max: 280 },
         { label: '281-320', min: 281, max: 320 },
         { label: '321-400', min: 321, max: 400 },
         { label: '401-600', min: 401, max: 600 },
 
-        // Finer
         { label: '200-250', min: 200, max: 250 },
         { label: '251-300', min: 251, max: 300 },
         { label: '301-350', min: 301, max: 350 },
@@ -660,13 +704,11 @@
         combinedRows,
         normalizedRows,
 
-        // Existing bands from raw data
         band200280: filterBand(combinedRows, 200, 280),
         band281320: filterBand(combinedRows, 281, 320),
         band321400: filterBand(combinedRows, 321, 400),
         band401600: filterBand(combinedRows, 401, 600),
 
-        // New finer bands from raw data
         band200250: filterBand(combinedRows, 200, 250),
         band251300: filterBand(combinedRows, 251, 300),
         band301350: filterBand(combinedRows, 301, 350),
@@ -765,9 +807,10 @@
 
     function createControlSelect(selectedId, currentFileId) {
       const select = document.createElement('select');
+
       const blank = document.createElement('option');
       blank.value = '';
-      blank.textContent = 'Select control';
+      blank.textContent = 'None';
       select.appendChild(blank);
 
       getControlFiles()
@@ -802,7 +845,6 @@
 
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
-        nameInput.className = 'name-input';
         nameInput.value = file.customName || '';
         nameInput.placeholder = 'Enter output column name';
         nameInput.addEventListener('input', (e) => {
@@ -814,7 +856,6 @@
 
         const hoursInput = document.createElement('input');
         hoursInput.type = 'number';
-        hoursInput.className = 'name-input';
         hoursInput.value = file.hours;
         hoursInput.placeholder = 'Hours';
         hoursInput.addEventListener('input', (e) => {
